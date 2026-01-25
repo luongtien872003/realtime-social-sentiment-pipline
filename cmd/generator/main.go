@@ -88,7 +88,6 @@ func main() {
 	var totalSent int64
 	var minuteSent int64
 	startTime := time.Now()
-	minuteStart := time.Now()
 
 	// Channel để dừng workers
 	stopChan := make(chan struct{})
@@ -127,7 +126,6 @@ func main() {
 			case <-ticker.C:
 				minCount := atomic.SwapInt64(&minuteSent, 0)
 				fmt.Printf("📈 [MINUTE] Sent %d posts in last minute\n", minCount)
-				minuteStart = time.Now()
 			}
 		}
 	}()
