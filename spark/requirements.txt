@@ -1,0 +1,11 @@
+# =====================================================
+# PYTHON DEPENDENCIES CHO SPARK/ANALYTICS
+# =====================================================
+# Cài đặt: pip install -r requirements.txt
+# =====================================================
+
+# Database
+psycopg2-binary==2.9.9
+
+# Spark (optional - nếu chạy với PySpark)
+# pyspark==3.5.0

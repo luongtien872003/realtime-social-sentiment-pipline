@@ -1,0 +1,81 @@
+# =====================================================
+# CD WORKFLOW - Deploy tự động
+# =====================================================
+# Trigger: Push vào main hoặc tạo release tag
+# Deploy: AWS ECS/EKS (placeholder)
+# =====================================================
+
+name: CD Pipeline
+
+on:
+  push:
+    branches: [main]
+    tags:
+      - 'v*'
+  workflow_dispatch:  # Cho phép trigger thủ công
+
+env:
+  AWS_REGION: ap-southeast-1
+  ECR_REPOSITORY: social-insight
+
+jobs:
+  # =====================================================
+  # JOB 1: Deploy to Staging (khi push main)
+  # =====================================================
+  deploy-staging:
+    name: 🚀 Deploy Staging
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: staging
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # Placeholder - Thêm steps deploy thực tế sau
+      - name: Deploy to Staging
+        run: |
+          echo "🚀 Deploying to staging environment..."
+          echo "   Commit: ${{ github.sha }}"
+          echo "   Branch: ${{ github.ref_name }}"
+          # TODO: kubectl apply hoặc aws ecs update-service
+
+  # =====================================================
+  # JOB 2: Deploy to Production (khi tạo release)
+  # =====================================================
+  deploy-production:
+    name: 🌟 Deploy Production
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    environment: production
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get version
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      # Placeholder - Production deployment
+      - name: Deploy to Production
+        run: |
+          echo "🌟 Deploying to production..."
+          echo "   Version: ${{ steps.version.outputs.VERSION }}"
+          # TODO: Production deployment steps
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          generate_release_notes: true

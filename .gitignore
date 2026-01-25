@@ -1,0 +1,60 @@
+# =====================================================
+# .gitignore - Files và folders không push lên Git
+# =====================================================
+
+# === Go ===
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.work
+vendor/
+
+# === Python ===
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+.venv/
+*.egg-info/
+dist/
+build/
+
+# === IDE ===
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# === OS ===
+.DS_Store
+Thumbs.db
+
+# === Logs ===
+*.log
+logs/
+
+# === Output ===
+analytics_output/
+processed_posts.json
+test_output.json
+
+# === Environment ===
+.env
+.env.local
+.env.*.local
+
+# === Docker ===
+# Không ignore docker-compose để người khác có thể dùng
+
+# === Temp ===
+tmp/
+temp/
+*.tmp
