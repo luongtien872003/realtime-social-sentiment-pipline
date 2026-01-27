@@ -301,15 +301,12 @@ docker-compose up -d
 # Đợi 30s cho Kafka ready
 ```
 
-### 3. Run Pipeline (3 terminals)
+### 3. Run Pipeline (2 terminals)
 ```bash
 # Terminal 1: Consumer
 go run cmd/consumer/main.go
 
-# Terminal 2: Generator (10k posts/min streaming)
-go run cmd/generator/main.go
-
-# Terminal 3: API + Dashboard
+# Terminal 2: API + Dashboard
 go run cmd/api/main.go
 ```
 
@@ -320,11 +317,10 @@ Open: **http://localhost:8888**
 
 ## 📊 Features
 
-- ✅ **Streaming Generator**: 10k posts/min liên tục với goroutines
 - ✅ **Kafka Message Queue**: High-throughput message processing
 - ✅ **Redis Cache**: Realtime stats và recent posts
 - ✅ **PostgreSQL Storage**: Batch insert với indexes
-- ✅ **Spark Streaming**: Phân tích mỗi 30 giây
+- ✅ **Crawler Pipeline**: Ingest data từ HN, Medium, DevTo
 - ✅ **Web Dashboard**: Charts realtime với Chart.js
 
 ---
@@ -343,17 +339,15 @@ Open: **http://localhost:8888**
 
 ```
 ├── cmd/
-│   ├── generator/   # Streaming data generator
 │   ├── consumer/    # Kafka to DB consumer
 │   └── api/         # REST API server
 ├── internal/
-│   ├── generator/   # Fake data logic
 │   ├── kafka/       # Producer & Consumer
 │   ├── redis/       # Cache layer
 │   └── database/    # PostgreSQL
-├── spark/jobs/      # Spark streaming analytics
 ├── web/             # Dashboard UI
-├── deploy/docker/   # Dockerfiles
+├── processing/      # ML service
+├── migrations/      # Database schema
 └── .github/workflows/ # CI/CD
 ```
 
