@@ -136,12 +136,9 @@ func (d *DevToCrawler) parseArticle(article DevToArticle, tag string) *models.Po
 		Author:    article.Author.Name,
 		Content:   article.Title,
 		Topic:     topicName,
-		URL:       article.URL,
 		Platform:  "devto",
-		Source:    "devto",
 		CreatedAt: createdAt,
 		Sentiment: "neutral", // Will be set by ML service
-		AIModel:   "none",    // Will be set by ML service
 	}
 
 	return post

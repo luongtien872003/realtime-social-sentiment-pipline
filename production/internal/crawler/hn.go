@@ -129,13 +129,10 @@ func (h *HackerNewsCrawler) fetchStory(id int) (*models.Post, error) {
 		Author:    story.By,
 		Content:   story.Title,
 		Topic:     topic,
-		URL:       story.URL,
 		Platform:  "hackernews",
-		Source:    "hn",
 		Likes:     story.Score,
 		CreatedAt: time.Now(),
 		Sentiment: "neutral", // Will be set by ML service
-		AIModel:   "none",    // Will be set by ML service
 	}
 
 	return post, nil

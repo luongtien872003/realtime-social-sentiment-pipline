@@ -10,7 +10,6 @@
 package crawler
 
 import (
-	"encoding/json"
 	"encoding/xml"
 	"fmt"
 	httpclient "social-insight/internal/http"
@@ -159,12 +158,9 @@ func (m *MediumCrawler) parseItem(item MediumItem, topic string) *models.Post {
 		Author:    item.Author,
 		Content:   content,
 		Topic:     topicName,
-		URL:       link,
 		Platform:  "medium",
-		Source:    "medium",
 		CreatedAt: time.Now(),
 		Sentiment: "neutral", // Will be set by ML service
-		AIModel:   "none",    // Will be set by ML service
 	}
 
 	return post

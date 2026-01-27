@@ -8,7 +8,6 @@
 package crawler
 
 import (
-	"encoding/json"
 	"fmt"
 	"social-insight/internal/kafka"
 	"social-insight/internal/models"
@@ -70,20 +69,8 @@ func (b *BaseCrawler) ProcessAndSend(posts []models.Post) (sent, skipped int, er
 		}
 
 		// Send to Kafka
-		data, err := json.Marshal(post)
-		if err != nil {
-			fmt.Printf("❌ Marshal error for %s: %v\n", post.ID, err)
-			skipped++
-			continue
-		}
-
-		// Send message
-		partition, offset, err := b.producer.SendMessage(
-			b.kafkaTopic,
-			post.ID, // key
-			string(data), // value
-		)
-		if err != nil {
+		// Send post via producer
+		if err := b.producer.SendPost(post); err != nil {
 			fmt.Printf("❌ Kafka send error for %s: %v\n", post.ID, err)
 			skipped++
 			continue
@@ -96,8 +83,8 @@ func (b *BaseCrawler) ProcessAndSend(posts []models.Post) (sent, skipped int, er
 		}
 
 		sent++
-		fmt.Printf("✅ [%s] Sent post %s (partition: %d, offset: %d)\n",
-			b.source, post.ID, partition, offset)
+		fmt.Printf("✅ [%s] Sent post %s\n",
+			b.source, post.ID)
 	}
 
 	return sent, skipped, nil
