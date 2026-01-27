@@ -156,6 +156,28 @@ func (c *Client) GetStats() (map[string]int64, error) {
 	return stats, nil
 }
 
+// CheckIfSeen kiểm tra xem post đã crawl trước đó chưa
+// source: "hn", "medium", "devto"
+// postID: ID của post từ source đó
+func (c *Client) CheckIfSeen(source, postID string) (bool, error) {
+	key := fmt.Sprintf("seen_posts:%s:%s", source, postID)
+	exists := c.rdb.Exists(c.ctx, key).Val()
+	return exists == 1, nil
+}
+
+// MarkAsSeen đánh dấu post đã crawl, với TTL (mặc định 7 days)
+// source: "hn", "medium", "devto"
+// postID: ID của post từ source đó
+// ttl: 0 = use default 7 days
+func (c *Client) MarkAsSeen(source, postID string, ttl time.Duration) error {
+	if ttl == 0 {
+		ttl = 7 * 24 * time.Hour // Default 7 days
+	}
+
+	key := fmt.Sprintf("seen_posts:%s:%s", source, postID)
+	return c.rdb.SetEX(c.ctx, key, "1", ttl).Err()
+}
+
 // Close đóng Redis connection
 func (c *Client) Close() error {
 	return c.rdb.Close()
