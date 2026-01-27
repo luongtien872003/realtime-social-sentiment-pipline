@@ -1,0 +1,87 @@
+# =====================================================
+# SOCIAL INSIGHT - AWS Processing Service
+# =====================================================
+# Deploy only Consumer + ML Service on separate EC2 instance
+# Run: docker-compose -f docker-compose.aws-processing.yml up -d
+# =====================================================
+
+services:
+  ml-service:
+    build:
+      context: .
+      dockerfile: processing/ml-service/Dockerfile
+    container_name: social_insight_ml_service
+    environment:
+      - ML_PORT=${ML_PORT}
+    ports:
+      - "${ML_PORT}:${ML_PORT}"
+    restart: unless-stopped
+    networks:
+      - social_insight_processing
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:${ML_PORT}/health').read()" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  consumer:
+    build:
+      context: .
+      dockerfile: processing/consumer/Dockerfile
+    container_name: social_insight_consumer
+    depends_on:
+      ml-service:
+        condition: service_healthy
+      kafka_check:
+        condition: service_completed_successfully
+    environment:
+      - KAFKA_BROKERS=${KAFKA_BROKERS}
+      - KAFKA_TOPIC=${KAFKA_TOPIC}
+      - CONSUMER_GROUP=${CONSUMER_GROUP}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - REDIS_ADDR=${REDIS_ADDR}
+      - ML_SERVICE_URL=${ML_SERVICE_URL}
+    restart: unless-stopped
+    networks:
+      - social_insight_processing
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Health check that service can connect to Kafka, RDS & ElastiCache
+  kafka_check:
+    image: alpine:3.19
+    container_name: social_insight_kafka_check
+    networks:
+      - social_insight_processing
+    command: >
+      sh -c "apk add --no-cache netcat-openbsd &&
+      echo 'Checking Kafka...' &&
+      while ! nc -z ${KAFKA_BROKERS%:*} ${KAFKA_BROKERS#*:}; do
+        echo 'Waiting for Kafka...';
+        sleep 5;
+      done &&
+      echo 'Kafka is available' &&
+      echo 'Checking Database...' &&
+      while ! nc -z ${DB_HOST} ${DB_PORT}; do
+        echo 'Waiting for database...';
+        sleep 5;
+      done &&
+      echo 'Database is available' &&
+      echo 'All services are ready!'"
+    restart: on-failure
+
+networks:
+  social_insight_processing:
+    driver: bridge

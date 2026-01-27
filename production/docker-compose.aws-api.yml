@@ -1,0 +1,51 @@
+# =====================================================
+# SOCIAL INSIGHT - AWS API Service
+# =====================================================
+# Deploy only API Gateway + Frontend on separate EC2 instance
+# Run: docker-compose -f docker-compose.aws-api.yml up -d
+# =====================================================
+
+services:
+  api-gateway:
+    build:
+      context: .
+      dockerfile: presentation/api-gateway/Dockerfile
+    container_name: social_insight_api_gateway
+    environment:
+      - API_PORT=${API_PORT}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - REDIS_ADDR=${REDIS_ADDR}
+      - FRONTEND_DIR=./frontend
+    ports:
+      - "${API_PORT}:${API_PORT}"
+    restart: unless-stopped
+    networks:
+      - social_insight_api
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    depends_on:
+      - tcp_check
+
+  # Health check that service can connect to RDS & ElastiCache
+  tcp_check:
+    image: alpine:3.19
+    container_name: social_insight_tcp_check
+    networks:
+      - social_insight_api
+    command: >
+      sh -c "while ! nc -z ${DB_HOST} ${DB_PORT}; do
+        echo 'Waiting for database...';
+        sleep 5;
+      done && echo 'Database is available'"
+    restart: unless-stopped
+
+networks:
+  social_insight_api:
+    driver: bridge
