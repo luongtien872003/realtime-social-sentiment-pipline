@@ -1,0 +1,65 @@
+# =====================================================
+# SOCIAL INSIGHT - AWS Ingestion Service
+# =====================================================
+# Deploy only CRAWLERS on separate EC2 instance
+# Run: docker-compose -f docker-compose.aws-ingestion.yml up -d
+# =====================================================
+
+services:
+  hn-crawler:
+    build:
+      context: .
+      dockerfile: ingestion/hn-crawler/Dockerfile
+    container_name: social_insight_hn_crawler
+    environment:
+      - KAFKA_BROKERS=${KAFKA_BROKERS}
+      - KAFKA_TOPIC=${KAFKA_TOPIC}
+      - CRAWL_INTERVAL=${HN_CRAWL_INTERVAL}
+    restart: unless-stopped
+    networks:
+      - social_insight_ingestion
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  medium-crawler:
+    build:
+      context: .
+      dockerfile: ingestion/medium-crawler/Dockerfile
+    container_name: social_insight_medium_crawler
+    environment:
+      - KAFKA_BROKERS=${KAFKA_BROKERS}
+      - KAFKA_TOPIC=${KAFKA_TOPIC}
+      - CRAWL_INTERVAL=${MEDIUM_CRAWL_INTERVAL}
+    restart: unless-stopped
+    networks:
+      - social_insight_ingestion
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  devto-crawler:
+    build:
+      context: .
+      dockerfile: ingestion/devto-crawler/Dockerfile
+    container_name: social_insight_devto_crawler
+    environment:
+      - KAFKA_BROKERS=${KAFKA_BROKERS}
+      - KAFKA_TOPIC=${KAFKA_TOPIC}
+      - CRAWL_INTERVAL=${DEVTO_CRAWL_INTERVAL}
+    restart: unless-stopped
+    networks:
+      - social_insight_ingestion
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  social_insight_ingestion:
+    driver: bridge
