@@ -112,6 +112,64 @@ services:
     networks:
       - social_insight_network
 
+  # ===== CRAWLERS LAYER (Ingestion) =====
+  hn-crawler:
+    build:
+      context: .
+      dockerfile: Dockerfile.hn-crawler
+    container_name: hn_crawler
+    depends_on:
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      KAFKA_BROKER: kafka:9092
+      KAFKA_TOPIC: raw_posts
+      REDIS_ADDR: redis:6379
+      CRAWL_INTERVAL: 5m
+    networks:
+      - social_insight_network
+    restart: unless-stopped
+
+  medium-crawler:
+    build:
+      context: .
+      dockerfile: Dockerfile.medium-crawler
+    container_name: medium_crawler
+    depends_on:
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      KAFKA_BROKER: kafka:9092
+      KAFKA_TOPIC: raw_posts
+      REDIS_ADDR: redis:6379
+      CRAWL_INTERVAL: 10m
+    networks:
+      - social_insight_network
+    restart: unless-stopped
+
+  devto-crawler:
+    build:
+      context: .
+      dockerfile: Dockerfile.devto-crawler
+    container_name: devto_crawler
+    depends_on:
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      KAFKA_BROKER: kafka:9092
+      KAFKA_TOPIC: raw_posts
+      REDIS_ADDR: redis:6379
+      CRAWL_INTERVAL: 10m
+    networks:
+      - social_insight_network
+    restart: unless-stopped
+
 # Network chung cho tất cả services
 networks:
   social_insight_network:

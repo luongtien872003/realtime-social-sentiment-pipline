@@ -1,0 +1,38 @@
+# =====================================================
+# DEVTO CRAWLER DOCKERFILE
+# =====================================================
+# Build: docker build -f Dockerfile.devto-crawler -t devto-crawler .
+# Run: docker run -e KAFKA_BROKER=kafka:9092 devto-crawler
+# =====================================================
+
+FROM golang:1.21-alpine AS builder
+
+# Install dependencies
+RUN apk add --no-cache git
+
+# Set working directory
+WORKDIR /app
+
+# Copy files
+COPY go.mod go.sum ./
+COPY cmd/crawler/devto cmd/crawler/devto
+COPY internal internal
+
+# Build
+RUN CGO_ENABLED=0 GOOS=linux go build \
+    -a -installsuffix cgo \
+    -o /app/devto-crawler \
+    ./cmd/crawler/devto
+
+# =====================================================
+# Final stage
+# =====================================================
+FROM alpine:latest
+
+RUN apk --no-cache add ca-certificates
+
+WORKDIR /root/
+
+COPY --from=builder /app/devto-crawler .
+
+ENTRYPOINT ["./devto-crawler"]
