@@ -1,0 +1,1669 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Social Insight Dashboard - AI Models Trends</title>
+    
+    <!-- Chart.js for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+            min-height: 100vh;
+            color: #e2e8f0;
+        }
+        
+        /* ===== HEADER ===== */
+        .header {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 24px 40px;
+            border-bottom: 2px solid rgba(148, 163, 184, 0.1);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .header h1 {
+            font-size: 32px;
+            background: linear-gradient(135deg, #0ea5e9, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 700;
+        }
+        
+        .header p {
+            color: #94a3b8;
+            margin-top: 8px;
+            font-size: 14px;
+        }
+        
+        /* ===== TABS NAVIGATION ===== */
+        .tabs-container {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+            padding: 0 40px;
+            display: flex;
+            gap: 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .tab-button {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            padding: 18px 28px;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+            font-weight: 600;
+            position: relative;
+        }
+        
+        .tab-button:hover {
+            color: #0ea5e9;
+        }
+        
+        .tab-button.active {
+            color: #0ea5e9;
+            border-bottom-color: #0ea5e9;
+        }
+        
+        /* ===== MAIN CONTAINER ===== */
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 40px;
+        }
+        
+        /* ===== TAB CONTENT ===== */
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.4s ease-out;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* ===== STATS CARDS ===== */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.8), rgba(30, 41, 59, 0.8));
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 28px;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-8px);
+            border-color: rgba(14, 165, 233, 0.3);
+            box-shadow: 0 20px 40px rgba(14, 165, 233, 0.1);
+        }
+        
+        .stat-card .icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+        }
+        
+        .stat-card .value {
+            font-size: 40px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #0ea5e9, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.2;
+        }
+        
+        .stat-card .label {
+            color: #94a3b8;
+            font-size: 13px;
+            margin-top: 12px;
+            font-weight: 500;
+        }
+        
+        /* ===== CHARTS GRID ===== */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        @media (max-width: 1200px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .chart-card {
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.8), rgba(30, 41, 59, 0.8));
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 28px;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+        }
+        
+        .chart-card.full {
+            grid-column: 1 / -1;
+        }
+        
+        .chart-card h3 {
+            margin-bottom: 24px;
+            color: #f1f5f9;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 350px;
+        }
+        
+        /* ===== TABLES ===== */
+        .table-card {
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.8), rgba(30, 41, 59, 0.8));
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 28px;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            margin-bottom: 40px;
+            overflow-x: auto;
+        }
+        
+        .table-card h3 {
+            margin-bottom: 24px;
+            color: #f1f5f9;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th {
+            background: rgba(148, 163, 184, 0.1);
+            color: #0ea5e9;
+            padding: 14px 16px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid rgba(148, 163, 184, 0.2);
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        td {
+            padding: 14px 16px;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+            font-size: 14px;
+        }
+        
+        tbody tr {
+            transition: all 0.2s ease;
+        }
+        
+        tbody tr:hover {
+            background: rgba(14, 165, 233, 0.1);
+        }
+        
+        /* ===== BADGES ===== */
+        .badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+        
+        .badge-positive { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
+        .badge-neutral { background: rgba(234, 179, 8, 0.2); color: #eab308; }
+        .badge-negative { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+        
+        .badge-ai { background: rgba(139, 92, 246, 0.2); color: #a78bfa; }
+        .badge-cloud { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+        .badge-devops { background: rgba(249, 115, 22, 0.2); color: #fb923c; }
+        .badge-programming { background: rgba(34, 197, 94, 0.2); color: #4ade80; }
+        .badge-startup { background: rgba(236, 72, 153, 0.2); color: #f472b6; }
+        
+        /* ===== MODEL CARDS GRID ===== */
+        .model-cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+        
+        .model-card {
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.8), rgba(30, 41, 59, 0.8));
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .model-card:hover {
+            transform: translateY(-8px);
+            border-color: rgba(14, 165, 233, 0.3);
+            box-shadow: 0 20px 40px rgba(14, 165, 233, 0.1);
+        }
+        
+        .model-card h4 {
+            color: #0ea5e9;
+            font-size: 18px;
+            margin-bottom: 16px;
+            font-weight: 600;
+        }
+        
+        .model-stat {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+            font-size: 14px;
+        }
+        
+        .model-stat:last-child {
+            border-bottom: none;
+        }
+        
+        .model-stat-label {
+            color: #94a3b8;
+        }
+        
+        .model-stat-value {
+            color: #0ea5e9;
+            font-weight: 600;
+        }
+        
+        .sentiment-mini {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid rgba(148, 163, 184, 0.2);
+        }
+        
+        .sentiment-item {
+            text-align: center;
+        }
+        
+        .sentiment-item .count {
+            font-size: 20px;
+            font-weight: 700;
+            color: #0ea5e9;
+        }
+        
+        .sentiment-item .label {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-top: 4px;
+        }
+        
+        /* ===== ARTICLES LIST ===== */
+        .article-item {
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.8), rgba(30, 41, 59, 0.8));
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            margin-bottom: 16px;
+            transition: all 0.3s ease;
+        }
+        
+        .article-item:hover {
+            border-color: rgba(14, 165, 233, 0.3);
+            box-shadow: 0 10px 30px rgba(14, 165, 233, 0.1);
+        }
+        
+        .article-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 12px;
+            gap: 16px;
+        }
+        
+        .article-header h4 {
+            color: #0ea5e9;
+            font-size: 16px;
+            flex: 1;
+            margin: 0;
+        }
+        
+        .article-source {
+            font-size: 12px;
+            background: rgba(148, 163, 184, 0.2);
+            padding: 4px 8px;
+            border-radius: 4px;
+            color: #cbd5e1;
+            white-space: nowrap;
+        }
+        
+        .article-content {
+            color: #cbd5e1;
+            font-size: 14px;
+            margin-bottom: 12px;
+            line-height: 1.6;
+        }
+        
+        .article-meta {
+            display: flex;
+            gap: 16px;
+            font-size: 12px;
+            color: #94a3b8;
+            flex-wrap: wrap;
+        }
+        
+        .article-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        /* ===== FILTERS ===== */
+        .filters {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        
+        .filter-group label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        select {
+            padding: 10px 12px;
+            border-radius: 8px;
+            background: rgba(30, 41, 59, 0.8);
+            color: #0ea5e9;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        select:hover {
+            border-color: rgba(14, 165, 233, 0.3);
+        }
+        
+        select:focus {
+            outline: none;
+            border-color: #0ea5e9;
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+        }
+        
+        /* ===== LOADING & EMPTY STATE ===== */
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: #94a3b8;
+        }
+        
+        .spinner {
+            border: 3px solid rgba(148, 163, 184, 0.2);
+            border-top: 3px solid #0ea5e9;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #94a3b8;
+        }
+        
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+        
+        /* ===== FOOTER ===== */
+        .footer {
+            text-align: center;
+            padding: 40px 20px;
+            color: #64748b;
+            font-size: 13px;
+            border-top: 1px solid rgba(148, 163, 184, 0.1);
+            margin-top: 60px;
+        }
+
+        /* ===== CRAWLER STATUS DOTS ===== */
+        .status-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 6px;
+            vertical-align: middle;
+            border: 1px solid rgba(148,163,184,0.15);
+        }
+        .status-up { background: #22c55e; }
+        .status-warn { background: #f59e0b; }
+        .status-down { background: #ef4444; }
+        .status-unknown { background: #94a3b8; }
+        
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            
+            .header {
+                padding: 16px 20px;
+            }
+            
+            .header h1 {
+                font-size: 24px;
+            }
+            
+            .tabs-container {
+                padding: 0 20px;
+            }
+            
+            .tab-button {
+                padding: 14px 16px;
+                font-size: 13px;
+            }
+            
+            .stats-row {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .model-cards-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ===== INSIGHTS CARDS ===== */
+        .insights-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .insight-card {
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.8), rgba(30, 41, 59, 0.8));
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 24px;
+            border: 2px solid rgba(148, 163, 184, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .insight-card:hover {
+            transform: translateY(-8px);
+            border-color: rgba(14, 165, 233, 0.5);
+            box-shadow: 0 20px 40px rgba(14, 165, 233, 0.15);
+        }
+
+        .insight-card.trending {
+            border-left: 4px solid #f59e0b;
+        }
+
+        .insight-card.emerging {
+            border-left: 4px solid #10b981;
+        }
+
+        .insight-card.anomaly {
+            border-left: 4px solid #ef4444;
+        }
+
+        .insight-card .type-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            background: rgba(148, 163, 184, 0.2);
+            color: #94a3b8;
+        }
+
+        .insight-card.trending .type-badge {
+            background: rgba(245, 158, 11, 0.2);
+            color: #f59e0b;
+        }
+
+        .insight-card.emerging .type-badge {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+        }
+
+        .insight-card.anomaly .type-badge {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+
+        .insight-card h3 {
+            font-size: 18px;
+            margin-bottom: 8px;
+            color: #e2e8f0;
+        }
+
+        .insight-card p {
+            color: #94a3b8;
+            font-size: 14px;
+            margin-bottom: 12px;
+            line-height: 1.5;
+        }
+
+        .confidence-meter {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: #94a3b8;
+        }
+
+        /* ===== COMPARISON CARDS ===== */
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+
+        .comparison-card {
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.8), rgba(30, 41, 59, 0.8));
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+        }
+
+        .comparison-header {
+            font-size: 16px;
+            font-weight: 600;
+            color: #0ea5e9;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+        }
+
+        .comparison-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            font-size: 14px;
+            color: #94a3b8;
+        }
+
+        .comparison-change {
+            margin-top: 16px;
+            padding: 12px;
+            background: rgba(16, 185, 129, 0.1);
+            border-radius: 8px;
+            color: #10b981;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .comparison-change.negative {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+        }
+    </style>
+</head>
+<body>
+    <!-- ===== HEADER ===== -->
+    <header class="header">
+        <h1>🔍 Social Insight Dashboard</h1>
+        <p>Realtime AI Models Trends Analysis from HackerNews, Medium, Dev.to</p>
+    </header>
+    
+    <!-- ===== TABS NAVIGATION ===== -->
+    <div class="tabs-container">
+        <button class="tab-button active" data-tab="trend">📈 Xu Hướng</button>
+        <button class="tab-button" data-tab="insights">💡 Insights</button>
+        <button class="tab-button" data-tab="compare">📊 So Sánh</button>
+        <button class="tab-button" data-tab="detail">🔍 Chi Tiết</button>
+        <button class="tab-button" data-tab="articles">📰 Bài Viết</button>
+    </div>
+    
+    <div class="container">
+        <!-- ===== TAB 1: TREND ===== -->
+        <div class="tab-content active" id="tab-trend">
+            <h2 style="color: #0ea5e9; margin-bottom: 32px; font-size: 24px;">📈 Xu Hướng AI Models</h2>
+            
+            <!-- Stats Cards -->
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div class="icon">📝</div>
+                    <div class="value" id="trend-total-posts">0</div>
+                    <div class="label">Tổng số bài viết</div>
+                </div>
+                <div class="stat-card">
+                    <div class="icon">🤖</div>
+                    <div class="value" id="trend-top-model">-</div>
+                    <div class="label">Model được nhắc nhiều nhất</div>
+                </div>
+                <div class="stat-card">
+                    <div class="icon">📊</div>
+                    <div class="value" id="trend-unique-models">0</div>
+                    <div class="label">Số lượng AI Models khác nhau</div>
+                </div>
+                <div class="stat-card">
+                    <div class="icon">🔥</div>
+                    <div class="value" id="trend-hot-count">0</div>
+                    <div class="label">Bài viết trending (>100 likes)</div>
+                </div>
+            </div>
+            
+            <!-- Top Models Chart -->
+            <div class="charts-grid">
+                <div class="chart-card full">
+                    <h3>🏆 Top 10 AI Models được nhắc đến (dựa trên số bài viết)</h3>
+                    <div class="chart-container" style="height: 400px;">
+                        <canvas id="topModelsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Trend Over Time -->
+            <div class="charts-grid">
+                <div class="chart-card full">
+                    <h3>📅 Xu hướng theo thời gian (24h gần đây)</h3>
+                    <div class="chart-container" style="height: 350px;">
+                        <canvas id="trendTimeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Distribution Charts -->
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <h3>📚 Phân bố theo Topic</h3>
+                    <div class="chart-container">
+                        <canvas id="topicChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="chart-card">
+                    <h3>💬 Phân bố Sentiment</h3>
+                    <div class="chart-container">
+                        <canvas id="sentimentChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ===== TAB 2: INSIGHTS ===== -->
+        <div class="tab-content" id="tab-insights">
+            <h2 style="color: #0ea5e9; margin-bottom: 32px; font-size: 24px;">💡 Insights & Phát Hiện</h2>
+            
+            <!-- Insights Cards -->
+            <div class="insights-grid" id="insights-container">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    Đang phân tích dữ liệu...
+                </div>
+            </div>
+            
+            <!-- Insights Legend -->
+            <div style="margin-top: 32px; padding: 16px; background: rgba(148, 163, 184, 0.1); border-radius: 8px;">
+                <h3 style="margin-bottom: 12px;">Các loại Insights:</h3>
+                <ul style="list-style: none; gap: 16px; display: grid;">
+                    <li>🔥 <strong>Trending:</strong> Chủ đề/model đang được nhắc nhiều</li>
+                    <li>✨ <strong>Emerging:</strong> Mô hình mới đang nổi lên</li>
+                    <li>📉 <strong>Declining:</strong> Chủ đề đang mất quan tâm</li>
+                    <li>⚠️ <strong>Anomaly:</strong> Bài viết hoặc mô hình bất thường</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- ===== TAB 3: COMPARE ===== -->
+        <div class="tab-content" id="tab-compare">
+            <h2 style="color: #0ea5e9; margin-bottom: 32px; font-size: 24px;">📊 So Sánh Hôm Nay vs Hôm Qua</h2>
+            
+            <!-- Comparison Cards -->
+            <div class="comparison-grid">
+                <div class="comparison-card">
+                    <div class="comparison-header">📝 Số Bài Viết</div>
+                    <div class="comparison-row">
+                        <span>Hôm nay:</span>
+                        <span id="compare-today-posts" style="color: #0ea5e9; font-weight: bold;">0</span>
+                    </div>
+                    <div class="comparison-row">
+                        <span>Hôm qua:</span>
+                        <span id="compare-yesterday-posts" style="color: #94a3b8;">0</span>
+                    </div>
+                    <div class="comparison-change" id="compare-posts-change">
+                        <span>+0</span> <span id="compare-posts-percent" style="color: #10b981;">0%</span>
+                    </div>
+                </div>
+                
+                <div class="comparison-card">
+                    <div class="comparison-header">👍 Engagement</div>
+                    <div class="comparison-row">
+                        <span>Hôm nay:</span>
+                        <span id="compare-today-engagement" style="color: #0ea5e9; font-weight: bold;">0</span>
+                    </div>
+                    <div class="comparison-row">
+                        <span>Hôm qua:</span>
+                        <span id="compare-yesterday-engagement" style="color: #94a3b8;">0</span>
+                    </div>
+                    <div class="comparison-change" id="compare-engagement-change">
+                        <span>+0</span> interactions
+                    </div>
+                </div>
+                
+                <div class="comparison-card">
+                    <div class="comparison-header">📈 Trending Topics</div>
+                    <div id="compare-topics" style="margin-top: 12px; display: flex; flex-direction: column; gap: 8px;">
+                        <div class="loading" style="text-align: center; padding: 12px;">Đang phân tích...</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Detailed Comparison Table -->
+            <div class="table-card" style="margin-top: 32px;">
+                <h3>📊 Chi Tiết Theo Chủ Đề</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Chủ Đề</th>
+                            <th>Hôm Nay</th>
+                            <th>Hôm Qua</th>
+                            <th>Thay Đổi</th>
+                            <th>% Thay Đổi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="compare-details-table">
+                        <tr>
+                            <td colspan="5" class="loading">Đang tải dữ liệu...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- ===== TAB 4: DETAIL ===== -->
+        <div class="tab-content" id="tab-detail">
+            <h2 style="color: #0ea5e9; margin-bottom: 32px; font-size: 24px;">🔍 Chi Tiết từng AI Model</h2>
+            
+            <!-- Top Models Detail Cards -->
+            <div class="model-cards-grid" id="model-detail-container">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    Đang tải dữ liệu...
+                </div>
+            </div>
+            
+            <!-- Sentiment Comparison Table -->
+            <div class="table-card">
+                <h3>📊 So sánh Sentiment theo AI Model</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>AI Model</th>
+                            <th>Tích cực 😊</th>
+                            <th>Trung tính 😐</th>
+                            <th>Tiêu cực 😢</th>
+                            <th>Tổng bài viết</th>
+                            <th>% Tích cực</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sentiment-comparison-table">
+                        <tr>
+                            <td colspan="6" class="loading">Đang tải dữ liệu...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- ===== TAB 5: ARTICLES ===== -->
+        <div class="tab-content" id="tab-articles">
+            <h2 style="color: #0ea5e9; margin-bottom: 32px; font-size: 24px;">📰 Bài Viết Mới Nhất</h2>
+            
+            <!-- Filters -->
+            <div class="filters">
+                <div class="filter-group">
+                    <label>Chủ đề</label>
+                    <select id="article-topic-filter">
+                        <option value="">Tất cả</option>
+                        <option value="ai">AI</option>
+                        <option value="cloud">Cloud</option>
+                        <option value="devops">DevOps</option>
+                        <option value="programming">Programming</option>
+                        <option value="startup">Startup</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Sentiment</label>
+                    <select id="article-sentiment-filter">
+                        <option value="">Tất cả</option>
+                        <option value="positive">Tích cực 😊</option>
+                        <option value="neutral">Trung tính 😐</option>
+                        <option value="negative">Tiêu cực 😢</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Articles List -->
+            <div id="articles-list-container">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    Đang tải bài viết...
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ===== FOOTER ===== -->
+    <footer class="footer">
+        <div id="crawler-status" style="margin-bottom:12px; font-size:13px; color:#94a3b8;">
+            <span class="status-item">HN: <span id="status-hn" class="status-dot status-unknown"></span> <span id="status-hn-time">never</span></span>
+            &nbsp;•&nbsp;
+            <span class="status-item">Medium: <span id="status-medium" class="status-dot status-unknown"></span> <span id="status-medium-time">never</span></span>
+            &nbsp;•&nbsp;
+            <span class="status-item">Dev.to: <span id="status-devto" class="status-dot status-unknown"></span> <span id="status-devto-time">never</span></span>
+        </div>
+        <p>🚀 Social Insight - Phân tích realtime dữ liệu từ HackerNews, Medium, Dev.to | Data Pipeline: Web Crawlers → Kafka → PostgreSQL → API</p>
+    </footer>
+    
+    <script>
+        // =====================================================
+        // MAIN API & DATA
+        // =====================================================
+        
+        // Dynamic API base - works on any host/port
+        const API_BASE = window.location.origin + '/api';
+        let allPosts = [];
+        let topModelsChart, trendTimeChart, topicChart, sentimentChart;
+        
+        // AI Models list for reference
+        const AI_MODELS = [
+            'GPT-4', 'Claude', 'Claude-3', 'Llama', 'Llama-2', 'Gemini', 
+            'Mistral', 'LLaMA', 'GPT-3.5', 'Falcon', 'PaLM', 'Bard', 
+            'Alpaca', 'Davinci', 'Jurassic', 'LLaMA-2', 'OpenLLaMA'
+        ];
+        
+        // =====================================================
+        // UTILITY FUNCTIONS
+        // =====================================================
+        
+        function formatNumber(n) {
+            if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+            if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
+            return n.toString();
+        }
+        
+        function formatDate(dateString) {
+            if (!dateString) return '-';
+            try {
+                const date = new Date(dateString);
+                const now = new Date();
+                const diff = now - date;
+                const hours = Math.floor(diff / 3600000);
+                const days = Math.floor(diff / 86400000);
+                
+                if (hours < 1) return 'Vừa xong';
+                if (hours < 24) return `${hours}h trước`;
+                if (days < 7) return `${days}d trước`;
+                
+                return date.toLocaleDateString('vi-VN');
+            } catch (e) {
+                return '-';
+            }
+        }
+        
+        // Count posts by topic
+        function countTopicMentions() {
+            const topicCount = {};
+            const topics = ['ai', 'cloud', 'devops', 'programming', 'startup'];
+            topics.forEach(topic => {
+                topicCount[topic] = 0;
+            });
+            
+            allPosts.forEach(post => {
+                const topic = (post.topic || 'other').toLowerCase();
+                if (topicCount.hasOwnProperty(topic)) {
+                    topicCount[topic]++;
+                }
+            });
+            
+            return topicCount;
+        }
+        
+        // =====================================================
+        // API FUNCTIONS
+        // =====================================================
+        
+        async function fetchStats() {
+            try {
+                const response = await fetch(`${API_BASE}/stats`);
+                if (!response.ok) throw new Error('Failed to fetch stats');
+                const data = await response.json();
+                
+                // Update trend tab stats
+                document.getElementById('trend-total-posts').textContent = 
+                    formatNumber(data.total_posts || 0);
+                
+                return data;
+            } catch (error) {
+                console.error('Error fetching stats:', error);
+                return {};
+            }
+        }
+        
+        async function fetchTopics() {
+            try {
+                const response = await fetch(`${API_BASE}/topics`);
+                if (!response.ok) throw new Error('Failed to fetch topics');
+                const data = await response.json();
+                updateTopicChart(data);
+                return data;
+            } catch (error) {
+                console.error('Error fetching topics:', error);
+                return {};
+            }
+        }
+        
+        async function fetchSentiment() {
+            try {
+                const response = await fetch(`${API_BASE}/sentiment`);
+                if (!response.ok) throw new Error('Failed to fetch sentiment');
+                const data = await response.json();
+                updateSentimentChart(data);
+                return data;
+            } catch (error) {
+                console.error('Error fetching sentiment:', error);
+                return {};
+            }
+        }
+        
+        async function fetchRecentPosts() {
+            try {
+                const response = await fetch(`${API_BASE}/recent`);
+                if (!response.ok) throw new Error('Failed to fetch recent posts');
+                const data = await response.json();
+                allPosts = Array.isArray(data) ? data : [];
+                return allPosts;
+            } catch (error) {
+                console.error('Error fetching recent posts:', error);
+                return [];
+            }
+        }
+        
+        // =====================================================
+        // CHART INITIALIZATION
+        // =====================================================
+
+        // =====================================================
+        // CRAWLER STATUS UPDATES
+        // =====================================================
+        async function updateCrawlerStatus() {
+            try {
+                const resp = await fetch(`${API_BASE}/crawlers`);
+                if (!resp.ok) throw new Error('Failed to fetch crawlers status');
+                const data = await resp.json();
+
+                const updateItem = (idDot, idTime, value) => {
+                    const dot = document.getElementById(idDot);
+                    const timeEl = document.getElementById(idTime);
+                    if (!dot || !timeEl) return;
+                    if (!value || value === 'never') {
+                        dot.className = 'status-dot status-down';
+                        timeEl.textContent = 'never';
+                        return;
+                    }
+                    if (value === 'unknown') {
+                        dot.className = 'status-dot status-unknown';
+                        timeEl.textContent = 'unknown';
+                        return;
+                    }
+                    const t = new Date(value);
+                    const diff = (Date.now() - t.getTime()) / 1000;
+                    if (diff < 120) dot.className = 'status-dot status-up';
+                    else if (diff < 900) dot.className = 'status-dot status-warn';
+                    else dot.className = 'status-dot status-down';
+                    timeEl.textContent = formatDate(value);
+                };
+
+                updateItem('status-hn', 'status-hn-time', data.hn);
+                updateItem('status-medium', 'status-medium-time', data.medium);
+                updateItem('status-devto', 'status-devto-time', data.devto);
+            } catch (e) {
+                console.error('Crawler status error', e);
+            }
+        }
+
+        setInterval(updateCrawlerStatus, 10000);
+        window.addEventListener('load', () => { updateCrawlerStatus(); });
+        
+        // =====================================================
+        // INSIGHTS LOADING
+        // =====================================================
+        async function loadInsights() {
+            try {
+                const response = await fetch(`${API_BASE}/insights`);
+                if (!response.ok) throw new Error('Failed to fetch insights');
+                const data = await response.json();
+                
+                const container = document.getElementById('insights-container');
+                if (!data.insights || data.insights.length === 0) {
+                    container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #94a3b8;">Không có insights để hiển thị</div>';
+                    return;
+                }
+                
+                container.innerHTML = data.insights.map(insight => `
+                    <div class="insight-card ${insight.type}">
+                        <span class="type-badge">${insight.type.toUpperCase()}</span>
+                        <h3>${insight.title}</h3>
+                        <p>${insight.description}</p>
+                        <div class="confidence-meter">
+                            <span>📊 Độ tin cậy: ${(insight.confidence * 100).toFixed(0)}%</span>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading insights:', error);
+                document.getElementById('insights-container').innerHTML = 
+                    '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #ef4444;">Lỗi tải insights</div>';
+            }
+        }
+        
+        // =====================================================
+        // COMPARISON LOADING
+        // =====================================================
+        async function loadComparison() {
+            try {
+                const response = await fetch(`${API_BASE}/compare`);
+                if (!response.ok) throw new Error('Failed to fetch comparison');
+                const data = await response.json();
+                
+                const comp = data.comparison;
+                
+                // Update posts comparison
+                document.getElementById('compare-today-posts').textContent = data.today.posts;
+                document.getElementById('compare-yesterday-posts').textContent = data.yesterday.posts;
+                
+                const postsChange = document.getElementById('compare-posts-change');
+                const postsPercent = comp.posts_percent || 0;
+                const postsChangeSign = comp.posts_change >= 0 ? '+' : '';
+                postsChange.innerHTML = `
+                    <span>${postsChangeSign}${comp.posts_change}</span>
+                    <span id="compare-posts-percent" style="color: ${postsPercent >= 0 ? '#10b981' : '#ef4444'};">${postsPercent >= 0 ? '+' : ''}${postsPercent.toFixed(1)}%</span>
+                `;
+                if (postsPercent < 0) postsChange.classList.add('negative');
+                
+                // Update engagement comparison
+                document.getElementById('compare-today-engagement').textContent = data.today.engagement;
+                document.getElementById('compare-yesterday-engagement').textContent = data.yesterday.engagement;
+                
+                const engChange = document.getElementById('compare-engagement-change');
+                const engChangeSign = comp.engagement_change >= 0 ? '+' : '';
+                engChange.innerHTML = `<span>${engChangeSign}${comp.engagement_change}</span> interactions`;
+                if (comp.engagement_change < 0) engChange.classList.add('negative');
+                
+            } catch (error) {
+                console.error('Error loading comparison:', error);
+            }
+        }
+
+        // Enhanced comparison: populate topics list and detailed per-topic table
+        async function loadComparisonDetails() {
+            try {
+                // Ensure we have recent posts loaded
+                if (!allPosts || allPosts.length === 0) {
+                    await fetchRecentPosts();
+                }
+
+                const topics = ['ai', 'cloud', 'devops', 'programming', 'startup'];
+
+                const isSameDayOffset = (dateStr, offsetDays) => {
+                    if (!dateStr) return false;
+                    const d = new Date(dateStr);
+                    const now = new Date();
+                    now.setHours(0,0,0,0);
+                    now.setDate(now.getDate() - offsetDays);
+                    return d >= now && d < new Date(now.getTime() + 24*3600*1000);
+                };
+
+                const rows = [];
+                topics.forEach(topic => {
+                    const todayCount = allPosts.filter(p => p.topic === topic && isSameDayOffset(p.created_at, 0)).length;
+                    const yesterdayCount = allPosts.filter(p => p.topic === topic && isSameDayOffset(p.created_at, 1)).length;
+                    const change = todayCount - yesterdayCount;
+                    const percent = yesterdayCount === 0 ? (todayCount === 0 ? 0 : 100) : (change / yesterdayCount) * 100;
+
+                    rows.push({ topic, todayCount, yesterdayCount, change, percent });
+                });
+
+                // Populate topics summary (top 3 by today count)
+                const topicsContainer = document.getElementById('compare-topics');
+                if (topicsContainer) {
+                    const top = rows.slice().sort((a,b) => b.todayCount - a.todayCount).slice(0,3);
+                    topicsContainer.innerHTML = top.map(t => `
+                        <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 8px; background: rgba(255,255,255,0.02); border-radius:6px;">
+                            <div style="font-weight:600; color:#c7e3ff;">${t.topic.toUpperCase()}</div>
+                            <div style="color:#94a3b8;">${t.todayCount} posts</div>
+                        </div>
+                    `).join('');
+                }
+
+                // Populate details table
+                const table = document.getElementById('compare-details-table');
+                if (table) {
+                    table.innerHTML = rows.map(r => `
+                        <tr>
+                            <td><strong>${r.topic}</strong></td>
+                            <td>${r.todayCount}</td>
+                            <td>${r.yesterdayCount}</td>
+                            <td style="color: ${r.change >= 0 ? '#10b981' : '#ef4444'};">${r.change >= 0 ? '+' : ''}${r.change}</td>
+                            <td style="color: ${r.percent >= 0 ? '#10b981' : '#ef4444'};">${r.percent >= 0 ? '+' : ''}${r.percent.toFixed(1)}%</td>
+                        </tr>
+                    `).join('');
+                }
+            } catch (e) {
+                console.error('Error building comparison details', e);
+            }
+        }
+        
+        // =====================================================
+        // CHART INITIALIZATION
+        // =====================================================
+        function initCharts() {
+            // Top Models Chart (Horizontal Bar)
+            topModelsChart = new Chart(document.getElementById('topModelsChart'), {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Số bài viết nhắc đến',
+                        data: [],
+                        backgroundColor: 'rgba(14, 165, 233, 0.8)',
+                        borderColor: 'rgba(14, 165, 233, 1)',
+                        borderWidth: 0,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: { 
+                            grid: { color: 'rgba(148, 163, 184, 0.1)' },
+                            ticks: { color: '#94a3b8' }
+                        },
+                        y: { 
+                            grid: { display: false },
+                            ticks: { color: '#94a3b8' }
+                        }
+                    }
+                }
+            });
+            
+            // Trend Over Time (Line)
+            trendTimeChart = new Chart(document.getElementById('trendTimeChart'), {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Bài viết/giờ',
+                        data: [],
+                        backgroundColor: 'rgba(14, 165, 233, 0.1)',
+                        borderColor: 'rgba(14, 165, 233, 0.8)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: 'rgba(14, 165, 233, 1)',
+                        pointBorderWidth: 0,
+                        pointRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { 
+                            grid: { color: 'rgba(148, 163, 184, 0.1)' },
+                            ticks: { color: '#94a3b8' }
+                        },
+                        x: { 
+                            grid: { color: 'rgba(148, 163, 184, 0.1)' },
+                            ticks: { color: '#94a3b8' }
+                        }
+                    }
+                }
+            });
+            
+            // Topic Distribution (Doughnut)
+            topicChart = new Chart(document.getElementById('topicChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['AI', 'Cloud', 'DevOps', 'Programming', 'Startup'],
+                    datasets: [{
+                        data: [0, 0, 0, 0, 0],
+                        backgroundColor: [
+                            'rgba(139, 92, 246, 0.8)',
+                            'rgba(59, 130, 246, 0.8)',
+                            'rgba(249, 115, 22, 0.8)',
+                            'rgba(34, 197, 94, 0.8)',
+                            'rgba(236, 72, 153, 0.8)'
+                        ],
+                        borderColor: 'rgba(15, 23, 42, 1)',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8' } } }
+                }
+            });
+            
+            // Sentiment Distribution (Doughnut)
+            sentimentChart = new Chart(document.getElementById('sentimentChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Tích cực 😊', 'Trung tính 😐', 'Tiêu cực 😢'],
+                    datasets: [{
+                        data: [0, 0, 0],
+                        backgroundColor: [
+                            'rgba(34, 197, 94, 0.8)',
+                            'rgba(234, 179, 8, 0.8)',
+                            'rgba(239, 68, 68, 0.8)'
+                        ],
+                        borderColor: 'rgba(15, 23, 42, 1)',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8' } } }
+                }
+            });
+        }
+        
+        // =====================================================
+        // CHART UPDATE FUNCTIONS
+        // =====================================================
+        
+        function updateTopModelsChart() {
+            const topicCount = countTopicMentions();
+            const sorted = Object.entries(topicCount)
+                .filter(([_, count]) => count > 0)
+                .sort((a, b) => b[1] - a[1]);
+            
+            if (topModelsChart) {
+                topModelsChart.data.labels = sorted.map(([topic]) => topic.toUpperCase());
+                topModelsChart.data.datasets[0].data = sorted.map(([_, count]) => count);
+                topModelsChart.update();
+            }
+            
+            // Update top topic stat
+            if (sorted.length > 0) {
+                document.getElementById('trend-top-model').textContent = sorted[0][0].toUpperCase();
+                document.getElementById('trend-unique-models').textContent = sorted.length;
+            }
+        }
+        
+        function updateTrendTimeChart() {
+            // Generate hourly data for last 24 hours
+            const now = new Date();
+            const hourCounts = {};
+            
+            for (let i = 23; i >= 0; i--) {
+                const hour = new Date(now);
+                hour.setHours(hour.getHours() - i);
+                const key = hour.getHours() + ':00';
+                hourCounts[key] = 0;
+            }
+            
+            // Count posts per hour
+            allPosts.forEach(post => {
+                if (post.created_at) {
+                    const date = new Date(post.created_at);
+                    const key = date.getHours() + ':00';
+                    if (hourCounts[key] !== undefined) hourCounts[key]++;
+                }
+            });
+            
+            if (trendTimeChart) {
+                trendTimeChart.data.labels = Object.keys(hourCounts);
+                trendTimeChart.data.datasets[0].data = Object.values(hourCounts);
+                trendTimeChart.update();
+            }
+        }
+        
+        function updateTopicChart(data) {
+            if (!data || !topicChart) return;
+            topicChart.data.datasets[0].data = [
+                data.ai || 0,
+                data.cloud || 0,
+                data.devops || 0,
+                data.programming || 0,
+                data.startup || 0
+            ];
+            topicChart.update();
+        }
+        
+        function updateSentimentChart(data) {
+            if (!data || !sentimentChart) return;
+            sentimentChart.data.datasets[0].data = [
+                data.positive || 0,
+                data.neutral || 0,
+                data.negative || 0
+            ];
+            sentimentChart.update();
+        }
+        
+        // =====================================================
+        // TAB: DETAIL - Topic Cards
+        // =====================================================
+        
+        function loadDetailTab() {
+            const topicCount = countTopicMentions();
+            const topTopics = Object.entries(topicCount)
+                .filter(([_, count]) => count > 0)
+                .sort((a, b) => b[1] - a[1]);
+            
+            let html = '';
+            topTopics.forEach(([topic, count]) => {
+                const topicPosts = allPosts.filter(p => 
+                    (p.topic || '').toLowerCase() === topic.toLowerCase()
+                );
+                
+                const positive = topicPosts.filter(p => p.sentiment === 'positive').length;
+                const neutral = topicPosts.filter(p => p.sentiment === 'neutral').length;
+                const negative = topicPosts.filter(p => p.sentiment === 'negative').length;
+                
+                const avgLikes = topicPosts.length > 0 
+                    ? Math.round(topicPosts.reduce((sum, p) => sum + (p.likes || 0), 0) / topicPosts.length)
+                    : 0;
+                
+                html += `
+                    <div class="model-card">
+                        <h4>📌 ${topic.toUpperCase()}</h4>
+                        <div class="model-stat">
+                            <span class="model-stat-label">Tổng bài viết:</span>
+                            <span class="model-stat-value">${count}</span>
+                        </div>
+                        <div class="model-stat">
+                            <span class="model-stat-label">Avg Likes:</span>
+                            <span class="model-stat-value">${avgLikes}</span>
+                        </div>
+                        <div class="model-stat">
+                            <span class="model-stat-label">Engagement:</span>
+                            <span class="model-stat-value">${((positive / count) * 100).toFixed(1)}%</span>
+                        </div>
+                        <div class="sentiment-mini">
+                            <div class="sentiment-item">
+                                <div class="count">${positive}</div>
+                                <div class="label">😊</div>
+                            </div>
+                            <div class="sentiment-item">
+                                <div class="count">${neutral}</div>
+                                <div class="label">😐</div>
+                            </div>
+                            <div class="sentiment-item">
+                                <div class="count">${negative}</div>
+                                <div class="label">😢</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            if (html === '') {
+                html = '<div class="empty-state"><div class="empty-state-icon">📭</div><p>Chưa có dữ liệu về các Chủ Đề</p></div>';
+            }
+            
+            document.getElementById('model-detail-container').innerHTML = html;
+            
+            // Update sentiment comparison table
+            let tableHtml = '';
+            topTopics.forEach(([topic, count]) => {
+                const topicPosts = allPosts.filter(p => 
+                    (p.topic || '').toLowerCase() === topic.toLowerCase()
+                );
+                const positive = topicPosts.filter(p => p.sentiment === 'positive').length;
+                const neutral = topicPosts.filter(p => p.sentiment === 'neutral').length;
+                const negative = topicPosts.filter(p => p.sentiment === 'negative').length;
+                const positivePercent = count > 0 ? ((positive / count) * 100).toFixed(1) : 0;
+                
+                tableHtml += `
+                    <tr>
+                        <td><strong>${topic.toUpperCase()}</strong></td>
+                        <td><span class="badge badge-positive">${positive}</span></td>
+                        <td><span class="badge badge-neutral">${neutral}</span></td>
+                        <td><span class="badge badge-negative">${negative}</span></td>
+                        <td><strong>${count}</strong></td>
+                        <td><strong style="color: #22c55e;">${positivePercent}%</strong></td>
+                    </tr>
+                `;
+            });
+            
+            document.getElementById('sentiment-comparison-table').innerHTML = tableHtml || 
+                '<tr><td colspan="6" class="loading">Chưa có dữ liệu</td></tr>';
+        }
+        
+        // =====================================================
+        // TAB: ARTICLES - Posts List
+        // =====================================================
+        
+        function loadArticlesTab() {
+            updateArticlesList();
+        }
+        
+        function updateArticlesList() {
+            const topicFilter = document.getElementById('article-topic-filter')?.value || '';
+            const sentimentFilter = document.getElementById('article-sentiment-filter')?.value || '';
+            
+            let filtered = allPosts;
+            
+            if (topicFilter) {
+                filtered = filtered.filter(p => p.topic === topicFilter);
+            }
+            if (sentimentFilter) {
+                filtered = filtered.filter(p => p.sentiment === sentimentFilter);
+            }
+            
+            let html = '';
+            if (filtered.length === 0) {
+                html = '<div class="empty-state"><div class="empty-state-icon">📭</div><p>Không tìm thấy bài viết nào</p></div>';
+            } else {
+                filtered.slice(0, 100).forEach(post => {
+                    const sentimentEmoji = {
+                        'positive': '😊',
+                        'neutral': '😐',
+                        'negative': '😢'
+                    }[post.sentiment] || '😐';
+                    
+                    html += `
+                        <div class="article-item">
+                            <div class="article-header">
+                                <h4>${post.author || 'Anonymous'}</h4>
+                                <span class="article-source">${(post.platform || 'unknown').toUpperCase()}</span>
+                            </div>
+                            <div class="article-content">
+                                ${(post.content || '').substring(0, 200)}${(post.content || '').length > 200 ? '...' : ''}
+                            </div>
+                            <div class="article-meta">
+                                <span class="article-meta-item">
+                                    <span class="badge badge-${post.topic}">${post.topic || 'other'}</span>
+                                </span>
+                                <span class="article-meta-item">
+                                    <span class="badge badge-${post.sentiment}">${sentimentEmoji}</span>
+                                </span>
+                                <span class="article-meta-item">❤️ ${post.likes || 0}</span>
+                                <span class="article-meta-item">💬 ${post.comments || 0}</span>
+                                <span class="article-meta-item">↗️ ${post.shares || 0}</span>
+                                <span class="article-meta-item">⏰ ${formatDate(post.created_at)}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            
+            document.getElementById('articles-list-container').innerHTML = html;
+        }
+        
+        // =====================================================
+        // TAB SWITCHING
+        // =====================================================
+        
+        document.querySelectorAll('.tab-button').forEach(button => {
+            button.addEventListener('click', function() {
+                const tabName = this.getAttribute('data-tab');
+                
+                // Update active button
+                document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Update active content
+                document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                document.getElementById('tab-' + tabName).classList.add('active');
+                
+                // Load specific tab data
+                if (tabName === 'trend') {
+                    updateTopModelsChart();
+                    updateTrendTimeChart();
+                } else if (tabName === 'detail') {
+                    loadDetailTab();
+                } else if (tabName === 'articles') {
+                    loadArticlesTab();
+                }
+            });
+        });
+        
+        // =====================================================
+        // ARTICLE FILTERS
+        // =====================================================
+        
+        document.getElementById('article-topic-filter')?.addEventListener('change', updateArticlesList);
+        document.getElementById('article-sentiment-filter')?.addEventListener('change', updateArticlesList);
+        
+        // =====================================================
+        // INITIALIZATION
+        // =====================================================
+        
+        async function loadAllData() {
+            await Promise.all([
+                fetchStats(),
+                fetchTopics(),
+                fetchSentiment(),
+                fetchRecentPosts(),
+                loadInsights(),
+                loadComparison()
+            ]);
+            
+            // Update trend stats
+            document.getElementById('trend-hot-count').textContent = formatNumber(
+                allPosts.filter(p => (p.likes || 0) > 100).length
+            );
+            
+            // Update all visible charts
+            updateTopModelsChart();
+            updateTrendTimeChart();
+        }
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            // ===== TAB SWITCHING =====
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            tabButtons.forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const tabName = button.getAttribute('data-tab');
+                    
+                    // Remove active from all
+                    tabButtons.forEach(b => b.classList.remove('active'));
+                    tabContents.forEach(t => t.classList.remove('active'));
+                    
+                    // Add active to clicked
+                    button.classList.add('active');
+                    const tabContent = document.getElementById(`tab-${tabName}`);
+                    if (tabContent) {
+                        tabContent.classList.add('active');
+                    }
+
+                    // Load data for this tab
+                    if (tabName === 'trend') {
+                        updateTopModelsChart();
+                        updateTrendTimeChart();
+                    } else if (tabName === 'detail') {
+                        loadDetailTab();
+                    } else if (tabName === 'articles') {
+                        loadArticlesTab();
+                    } else if (tabName === 'compare') {
+                        loadComparison();
+                        loadComparisonDetails();
+                    }
+                });
+            });
+            
+            initCharts();
+            await loadAllData();
+            await loadComparisonDetails();
+
+            // Auto refresh every 10 seconds
+            setInterval(async () => {
+                await loadAllData();
+                await loadComparisonDetails();
+            }, 10000);
+        });
+    </script>
+</body>
+</html>

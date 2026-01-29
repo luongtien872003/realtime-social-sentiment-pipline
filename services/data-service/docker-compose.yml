@@ -1,0 +1,144 @@
+# =====================================================
+# DOCKER COMPOSE - Data Service (Infrastructure)
+# =====================================================
+# Mô tả: Khởi động tất cả infrastructure services
+#   - PostgreSQL: Database
+#   - Redis: Cache layer
+#   - Kafka + Zookeeper: Message queue
+#
+# Cách dùng: docker-compose up -d
+# Stop: docker-compose down
+# Xóa data: docker-compose down -v
+# =====================================================
+
+version: '3.8'
+
+services:
+  # ===== POSTGRESQL =====
+  postgres:
+    image: postgres:15-alpine
+    container_name: data_postgres
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres123}
+      POSTGRES_DB: ${DB_NAME:-social_insight}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      interval: 5s
+      timeout: 10s
+      retries: 10
+    networks:
+      - data_network
+      - social_insight_network
+    restart: unless-stopped
+
+  # ===== ZOOKEEPER =====
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: data_zookeeper
+    ports:
+      - "${ZOOKEEPER_PORT:-2181}:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper/data
+      - zookeeper_log:/var/lib/zookeeper/log
+    networks:
+      - data_network
+      - social_insight_network
+    restart: unless-stopped
+
+  # ===== KAFKA =====
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: data_kafka
+    ports:
+      - "${KAFKA_PORT:-9092}:9092"
+    depends_on:
+      zookeeper:
+        condition: service_started
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_MESSAGE_MAX_BYTES: 10485760
+      KAFKA_REPLICA_FETCH_MAX_BYTES: 10485760
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD", "bash", "-c", "nc -z localhost 9092"]
+      interval: 5s
+      timeout: 10s
+      retries: 10
+    networks:
+      - data_network
+      - social_insight_network
+    restart: unless-stopped
+
+  # ===== REDIS =====
+  redis:
+    image: redis:7-alpine
+    container_name: data_redis
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 10s
+      retries: 10
+    networks:
+      - data_network
+      - social_insight_network
+    restart: unless-stopped
+
+  # ===== KAFKA UI =====
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: data_kafka_ui
+    ports:
+      - "${KAFKA_UI_PORT:-8080}:8080"
+    depends_on:
+      - kafka
+      - zookeeper
+    environment:
+      KAFKA_CLUSTERS_0_NAME: data_cluster
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+    networks:
+      - data_network
+    restart: unless-stopped
+
+# Volumes
+volumes:
+  postgres_data:
+    driver: local
+  zookeeper_data:
+    driver: local
+  zookeeper_log:
+    driver: local
+  kafka_data:
+    driver: local
+  redis_data:
+    driver: local
+
+# Networks
+networks:
+  data_network:
+    driver: bridge
+  social_insight_network:
+    external: true

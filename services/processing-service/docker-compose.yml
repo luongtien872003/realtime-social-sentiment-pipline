@@ -1,0 +1,121 @@
+# =====================================================
+# DOCKER COMPOSE - Processing Service
+# =====================================================
+# Mô tả: Khởi động consumer và crawlers
+#   - Crawlers: HN, DevTo, Medium (crawl dữ liệu)
+#   - Consumer: Đọc từ Kafka → Redis + PostgreSQL
+#
+# Prerequisites: Data Service phải chạy trước
+# Cách dùng: docker-compose up -d
+# =====================================================
+
+version: '3.8'
+
+services:
+  # ===== HN CRAWLER =====
+  hn-crawler:
+    build:
+      context: .
+      dockerfile: Dockerfile.hn-crawler
+    container_name: processing_hn_crawler
+    depends_on:
+      - check_data_service
+    environment:
+      KAFKA_BROKERS: ${KAFKA_HOST:-kafka:29092}
+      KAFKA_TOPIC: ${KAFKA_TOPIC:-raw_posts}
+      REDIS_ADDR: ${REDIS_HOST:-redis:6379}
+      HN_CRAWL_INTERVAL: ${HN_CRAWL_INTERVAL:-5m}
+      HN_STORIES_LIMIT: ${HN_STORIES_LIMIT:-30}
+    networks:
+      - processing_network
+      - social_insight_network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+  # ===== DEVTO CRAWLER =====
+  devto-crawler:
+    build:
+      context: .
+      dockerfile: Dockerfile.devto-crawler
+    container_name: processing_devto_crawler
+    depends_on:
+      - check_data_service
+    environment:
+      KAFKA_BROKERS: ${KAFKA_HOST:-kafka:29092}
+      KAFKA_TOPIC: ${KAFKA_TOPIC:-raw_posts}
+      REDIS_ADDR: ${REDIS_HOST:-redis:6379}
+      DEVTO_CRAWL_INTERVAL: ${DEVTO_CRAWL_INTERVAL:-10m}
+      DEVTO_POSTS_PER_TAG: ${DEVTO_POSTS_PER_TAG:-6}
+      DEVTO_TAGS: ${DEVTO_TAGS:-ai,machine-learning,cloud,devops,startups}
+    networks:
+      - processing_network
+      - social_insight_network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+  # ===== MEDIUM CRAWLER =====
+  medium-crawler:
+    build:
+      context: .
+      dockerfile: Dockerfile.medium-crawler
+    container_name: processing_medium_crawler
+    depends_on:
+      - check_data_service
+    environment:
+      KAFKA_BROKERS: ${KAFKA_HOST:-kafka:29092}
+      KAFKA_TOPIC: ${KAFKA_TOPIC:-raw_posts}
+      REDIS_ADDR: ${REDIS_HOST:-redis:6379}
+      MEDIUM_CRAWL_INTERVAL: ${MEDIUM_CRAWL_INTERVAL:-10m}
+      MEDIUM_POSTS_PER_TOPIC: ${MEDIUM_POSTS_PER_TOPIC:-10}
+      MEDIUM_TOPICS: ${MEDIUM_TOPICS:-machine-learning,artificial-intelligence,cloud-computing,devops,startups}
+    networks:
+      - processing_network
+      - social_insight_network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+  # ===== KAFKA CONSUMER =====
+  consumer:
+    build:
+      context: .
+      dockerfile: Dockerfile.consumer
+    container_name: processing_consumer
+    depends_on:
+      - check_data_service
+    environment:
+      KAFKA_BROKERS: ${KAFKA_HOST:-kafka:29092}
+      KAFKA_TOPIC: ${KAFKA_TOPIC:-raw_posts}
+      CONSUMER_GROUP: ${CONSUMER_GROUP:-social_insight_consumer}
+      REDIS_ADDR: ${REDIS_HOST:-redis:6379}
+      PG_HOST: ${PG_HOST:-postgres}
+      PG_PORT: ${PG_PORT:-5432}
+      PG_USER: ${PG_USER:-postgres}
+      PG_PASSWORD: ${PG_PASSWORD:-postgres123}
+      PG_DBNAME: ${PG_DBNAME:-social_insight}
+      CONSUMER_BATCH_SIZE: ${CONSUMER_BATCH_SIZE:-500}
+      CONSUMER_FLUSH_INTERVAL: ${CONSUMER_FLUSH_INTERVAL:-2s}
+    networks:
+      - processing_network
+      - social_insight_network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+  # ===== HEALTH CHECK SERVICE =====
+  check_data_service:
+    image: alpine
+    entrypoint: /bin/sh
+    command: -c "echo 'Waiting for data service to be ready...'"
+    networks:
+      - processing_network
+      - social_insight_network
+
+# Networks
+networks:
+  processing_network:
+    driver: bridge
+  social_insight_network:
+    external: true

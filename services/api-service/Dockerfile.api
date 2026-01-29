@@ -1,0 +1,38 @@
+# =====================================================
+# API SERVICE DOCKERFILE
+# =====================================================
+# Build: docker build -f Dockerfile.api -t social-insight-api .
+# Run: docker run -p 8888:8888 social-insight-api
+# =====================================================
+
+FROM golang:1.21-alpine AS builder
+
+# Install dependencies
+RUN apk add --no-cache git
+
+WORKDIR /app
+
+# Copy modules and source
+COPY . .
+
+# Build the API
+RUN CGO_ENABLED=0 GOOS=linux go build \
+    -a -installsuffix cgo \
+    -o /app/api \
+    ./cmd/api
+
+# =====================================================
+# Final stage
+# =====================================================
+FROM alpine:latest
+
+RUN apk --no-cache add ca-certificates
+
+WORKDIR /root/
+
+COPY --from=builder /app/api .
+COPY --from=builder /app/web ./web
+
+EXPOSE 8888
+
+CMD ["./api"]

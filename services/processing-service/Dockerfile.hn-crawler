@@ -1,0 +1,35 @@
+# =====================================================
+# HN CRAWLER DOCKERFILE
+# =====================================================
+# Build: docker build -f Dockerfile.hn-crawler -t social-insight-hn-crawler .
+# Run: docker run -e KAFKA_BROKERS=kafka:9092 social-insight-hn-crawler
+# =====================================================
+
+FROM golang:1.21-alpine AS builder
+
+# Install dependencies
+RUN apk add --no-cache git
+
+WORKDIR /app
+
+# Copy modules and source
+COPY . .
+
+# Build the crawler
+RUN CGO_ENABLED=0 GOOS=linux go build \
+    -a -installsuffix cgo \
+    -o /app/hn-crawler \
+    ./cmd/crawlers/crawler/hn
+
+# =====================================================
+# Final stage
+# =====================================================
+FROM alpine:latest
+
+RUN apk --no-cache add ca-certificates
+
+WORKDIR /root/
+
+COPY --from=builder /app/hn-crawler .
+
+ENTRYPOINT ["./hn-crawler"]

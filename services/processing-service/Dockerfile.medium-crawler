@@ -1,0 +1,35 @@
+# =====================================================
+# MEDIUM CRAWLER DOCKERFILE
+# =====================================================
+# Build: docker build -f Dockerfile.medium-crawler -t social-insight-medium-crawler .
+# Run: docker run -e KAFKA_BROKERS=kafka:9092 social-insight-medium-crawler
+# =====================================================
+
+FROM golang:1.21-alpine AS builder
+
+# Install dependencies
+RUN apk add --no-cache git
+
+WORKDIR /app
+
+# Copy modules and source
+COPY . .
+
+# Build the crawler
+RUN CGO_ENABLED=0 GOOS=linux go build \
+    -a -installsuffix cgo \
+    -o /app/medium-crawler \
+    ./cmd/crawlers/crawler/medium
+
+# =====================================================
+# Final stage
+# =====================================================
+FROM alpine:latest
+
+RUN apk --no-cache add ca-certificates
+
+WORKDIR /root/
+
+COPY --from=builder /app/medium-crawler .
+
+ENTRYPOINT ["./medium-crawler"]
